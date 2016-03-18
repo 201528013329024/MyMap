@@ -4,7 +4,7 @@
  * All rights reserved. 
  * 
  * MainActivity Class {@link MainActivity}  
- */
+ */ 
 
 package com.xhg.mymap;
 
