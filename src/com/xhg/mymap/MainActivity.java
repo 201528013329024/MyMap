@@ -9,41 +9,63 @@
 package com.xhg.mymap;
 
 import java.util.ArrayList;
-import java.util.Map;
 
+//
+/*定位需要引用的包*/
+import com.baidu.location.BDLocation;
+import com.baidu.location.BDLocationListener;
+import com.baidu.location.LocationClient;
+import com.baidu.location.LocationClientOption;
 import com.baidu.mapapi.BMapManager;
 import com.baidu.mapapi.MKGeneralListener;
 import com.baidu.mapapi.map.Geometry;
 import com.baidu.mapapi.map.Graphic;
 import com.baidu.mapapi.map.GraphicsOverlay;
 import com.baidu.mapapi.map.ItemizedOverlay;
+import com.baidu.mapapi.map.LocationData;
 import com.baidu.mapapi.map.MKEvent;
 import com.baidu.mapapi.map.MapController;
 import com.baidu.mapapi.map.MapView;
+import com.baidu.mapapi.map.MapView.LayoutParams;
+import com.baidu.mapapi.map.MyLocationOverlay;
 import com.baidu.mapapi.map.OverlayItem;
 import com.baidu.mapapi.map.PoiOverlay;
+import com.baidu.mapapi.map.RouteOverlay;
 import com.baidu.mapapi.map.Symbol;
 import com.baidu.mapapi.map.TextItem;
 import com.baidu.mapapi.map.TextOverlay;
+import com.baidu.mapapi.map.TransitOverlay;
 import com.baidu.mapapi.search.MKAddrInfo;
 import com.baidu.mapapi.search.MKBusLineResult;
 import com.baidu.mapapi.search.MKDrivingRouteResult;
+import com.baidu.mapapi.search.MKPlanNode;
 import com.baidu.mapapi.search.MKPoiInfo;
 import com.baidu.mapapi.search.MKPoiResult;
+import com.baidu.mapapi.search.MKRoute;
+import com.baidu.mapapi.search.MKRoutePlan;
 import com.baidu.mapapi.search.MKSearch;
 import com.baidu.mapapi.search.MKSearchListener;
 import com.baidu.mapapi.search.MKSuggestionResult;
+import com.baidu.mapapi.search.MKTransitRoutePlan;
 import com.baidu.mapapi.search.MKTransitRouteResult;
 import com.baidu.mapapi.search.MKWalkingRouteResult;
+import com.baidu.mapapi.search.MKWpNode;
 import com.baidu.platform.comapi.basestruct.GeoPoint;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.Window;
 import android.view.WindowManager;
+import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 public class MainActivity extends Activity {
@@ -52,17 +74,22 @@ public class MainActivity extends Activity {
 	private MapView mapView; // 地图显示容器
 	private MapController mapController; // mapController用于控制地图的平移，缩放和旋转
 
-	private View satellite_traffic_map;
-	private ImageView img_Flag, img_Traffic, img_Satellite;
+	private View satellite_traffic_map, location_icon, search_icon;
+	private ImageView img_Flag, img_Traffic, img_Satellite, img_Loc;
+	private EditText editText;
 
 	// 下面两个变量用于场所搜索，如美食、加油站等
-	private MKSearch search;
-	private MKSearchListener listener;
+	private MKSearch search_Place, search_Drive, search_Walk, search_Transit;
+	private MKSearchListener listener_Place, listener_Drive, listener_Walk, listener_Transit;
+
+	public LocationClient mLocationClient = null;
+	public BDLocationListener loctionListener = new MyLocationListener();
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
+		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		// 必须在设定Layout前验证百度key
 		checkKey();
 
@@ -70,17 +97,330 @@ public class MainActivity extends Activity {
 
 		initView();
 
-		addFlagTrafficSatellite();
+		addFlagTrafficSatellite(); // 加载可显示平面图、路况图和卫星图按钮
 
-		search();
+		// location();
+		addLocation();
+
+		// search_place(); //搜索指定场所
+
+		// search_Drive_Route();// 搜索驾车路线
+
+		// search_Walk_Route();// 搜索步行路线
+		// search_Transit_Route();// 搜索公交路线
+
+		addSearchIcon();
+
+	}
+
+	private void addSearchIcon() {
+//		RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(LayoutParams.WRAP_CONTENT,
+//				LayoutParams.WRAP_CONTENT);
+//		lp.addRule(RelativeLayout.CENTER_HORIZONTAL,RelativeLayout.TRUE);
+//		lp.leftMargin = 100;
+//		LayoutInflater inflater = LayoutInflater.from(this);
+//		search_icon = inflater.inflate(R.layout.search, null);
+//		search_icon.setLayoutParams(lp);
+
+		 search_icon = View.inflate(this, R.layout.search, null);
+
+		// 实例化img_Flag
+		// img_Loc = (ImageView) location_icon.findViewById(R.id.img_Loc);
+		// img_Loc.setImageResource(R.drawable.img_loc);
+
+		 search_icon.setVisibility(View.VISIBLE);
+		
+		 DisplayMetrics dm = new DisplayMetrics();
+
+		 getWindowManager().getDefaultDisplay().getMetrics(dm);
+
+		float  width =dm.widthPixels;
+
+		 search_icon.setX((width-search_icon.getWidth())/10);
+		 search_icon.setY(0);
+
+		mapView.addView(search_icon);
+		
+		
+		editText = (EditText) search_icon.findViewById(R.id.editText1);
+		editText.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				Toast.makeText(MainActivity.this, "你点击了我", Toast.LENGTH_SHORT).show();
+			}
+		});
+		
+
+	}
+
+	private void addLocation() {
+		location_icon = View.inflate(this, R.layout.location, null);
+
+		// 实例化img_Flag
+		img_Loc = (ImageView) location_icon.findViewById(R.id.img_Loc);
+		img_Loc.setImageResource(R.drawable.img_loc);
+
+		location_icon.setVisibility(View.VISIBLE);
+
+		// 获取手机屏幕的宽度
+
+		WindowManager wm = this.getWindowManager();
+		int height = wm.getDefaultDisplay().getHeight();
+
+		// 设置satellite_traffic_map的显示位置
+
+		location_icon.setX(0);
+		location_icon.setY(height - 230);
+
+		// 将satellite_traffic_map显示在mapView上
+		mapView.addView(location_icon);
+
+		location_icon.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) { // 显示平面图
+
+				// 调用两次location()是为了加快定位速度
+				location();
+				location();
+			}
+		});
+
+	}
+
+	private void location() {
+		// mapView.setTraffic(false);
+		// mapView.setSatellite(false);
+		mLocationClient = new LocationClient(getApplicationContext());
+		mLocationClient.start();
+		// mLocationClient.setForBaiduMap(true);
+		LocationClientOption option = new LocationClientOption();
+		option.setOpenGps(true);
+		option.setAddrType("all");// 返回的定位结果包含地址信息
+		option.setCoorType("bd09ll");// 返回的定位结果是百度经纬度,默认值gcj02
+		// option.setScanSpan(5000);//设置发起定位请求的间隔时间为5000ms
+		option.disableCache(true);// 禁止启用缓存定位
+		option.setPoiNumber(5); // 最多返回POI个数
+		option.setPoiDistance(1000); // poi查询距离
+		option.setPoiExtraInfo(true); // 是否需要POI的电话和地址等详细信息
+		mLocationClient.setLocOption(option);
+
+		mLocationClient.registerLocationListener(loctionListener);
+	}
+
+	private class MyLocationListener implements BDLocationListener {
+
+		@Override
+		public void onReceiveLocation(BDLocation location) {
+			if (location == null) {
+				return;
+			}
+
+			MyLocationOverlay overlay = new MyLocationOverlay(mapView) {
+
+				@Override
+				protected boolean dispatchTap() {
+					// TODO Auto-generated method stub
+					// GeoPoint point =
+					Toast.makeText(MainActivity.this, "再按一次后退键退出地图！", Toast.LENGTH_SHORT).show();
+					// mapView.setSatellite(true);
+					return true;
+				}
+			};
+			LocationData data = new LocationData();
+			data.latitude = location.getLatitude();
+			data.longitude = location.getLongitude();
+
+			Drawable drawable = MainActivity.this.getResources().getDrawable(R.drawable.location);
+			// overlay.setMarker(drawable);
+
+			overlay.enableCompass();
+			overlay.isCompassEnable();
+
+			// overlay.d
+			overlay.setData(data);
+			// overlay.enableCompass();
+			// mapView.getOverlay().clear();
+			mapView.getOverlays().add(overlay);
+
+			// mapView.refresh();
+			GeoPoint point = new GeoPoint((int) (data.latitude * 1E6), (int) (data.longitude * 1E6));
+			mapController.setZoom(15);
+			// mapController.setCenter(point);
+			mapController.animateTo(point);
+			mapView.refresh();
+			// mapView.invalidate();
+
+		}
+
+		@Override
+		public void onReceivePoi(BDLocation arg0) {
+			// TODO Auto-generated method stub
+
+		}
+		// TODO Auto-generated method stub
+
+	}
+
+	private void search_Transit_Route() {
+		mapView.setTraffic(true); // 要在地图上显示推荐驾驶路线，必须将地图设置为路况模式
+		search_Transit = new MKSearch();
+		listener_Transit = new MyMKSearchListener() {
+			@Override
+			public void onGetTransitRouteResult(MKTransitRouteResult result, int error) {
+				if (error == 0) {
+					if (result != null) {
+						TransitOverlay overlay = new TransitOverlay(MainActivity.this, mapView);
+						setData(overlay, result);
+						mapView.getOverlays().add(overlay);
+						mapView.refresh();
+						Toast.makeText(MainActivity.this, "result not null", Toast.LENGTH_SHORT).show();
+						super.onGetTransitRouteResult(result, error);
+					}
+				} else {
+					Toast.makeText(MainActivity.this, "没有查询结果", Toast.LENGTH_SHORT).show();
+				}
+
+			}
+
+			private void setData(TransitOverlay overlay, MKTransitRouteResult result) {
+				if (result.getNumPlan() > 0) { // 显示所有公交路线
+					for (int i = 0; i < result.getNumPlan(); i++) {
+						MKTransitRoutePlan route = result.getPlan(i);
+						overlay.setData(route);
+					}
+
+				} else {
+					Toast.makeText(MainActivity.this, "XXXX", Toast.LENGTH_SHORT).show();
+				}
+			}
+		};
+
+		search_Transit.init(manager, listener_Transit);
+
+		String city = "北京";
+
+		MKPlanNode start_place = new MKPlanNode();
+		start_place.name = "天安门"; // 也可以用地理坐标表示
+		// start_place.pt = ConstantValue.geoUCAS;
+
+		MKPlanNode end_place = new MKPlanNode();
+		end_place.name = "北京大学";// 也可以用地理坐标表示
+
+		search_Transit.transitSearch(city, start_place, end_place);
+	}
+
+	private void search_Walk_Route() {
+		mapView.setTraffic(true); // 要在地图上显示推荐驾驶路线，必须将地图设置为路况模式
+		search_Walk = new MKSearch();
+		listener_Walk = new MyMKSearchListener() {
+			@Override
+			public void onGetWalkingRouteResult(MKWalkingRouteResult result, int error) {
+				if (error == 0) {
+					if (result != null) {
+						RouteOverlay overlay = new RouteOverlay(MainActivity.this, mapView);
+						setData(overlay, result);
+						mapView.getOverlays().add(overlay);
+						mapView.refresh();
+						Toast.makeText(MainActivity.this, "result not null", Toast.LENGTH_SHORT).show();
+						super.onGetWalkingRouteResult(result, error);
+					}
+				} else {
+					Toast.makeText(MainActivity.this, "没有查询结果", Toast.LENGTH_SHORT).show();
+				}
+				super.onGetWalkingRouteResult(result, error);
+			}
+
+			private void setData(RouteOverlay overlay, MKWalkingRouteResult result) {
+				if (result.getNumPlan() > 0) {
+					MKRoutePlan plan = result.getPlan(0);
+					MKRoute route = plan.getRoute(0); // 此处默认参数为0
+					overlay.setData(route);
+				} else {
+					Toast.makeText(MainActivity.this, "XXXX", Toast.LENGTH_SHORT).show();
+				}
+			}
+		};
+
+		search_Walk.init(manager, listener_Walk);
+
+		String start_city = "北京";
+		String end_city = "北京";
+
+		MKPlanNode start_place = new MKPlanNode();
+		start_place.name = "天安门"; // 也可以用地理坐标表示
+		// start_place.pt = ConstantValue.geoUCAS;
+
+		MKPlanNode end_place = new MKPlanNode();
+		end_place.name = "北京大学";// 也可以用地理坐标表示
+
+		search_Walk.walkingSearch(start_city, start_place, end_city, end_place);
+	}
+
+	private void search_Drive_Route() {
+		mapView.setTraffic(true); // 要在地图上显示推荐驾驶路线，必须将地图设置为路况模式
+		search_Drive = new MKSearch();
+		listener_Drive = new MyMKSearchListener() {
+			@Override
+			public void onGetDrivingRouteResult(MKDrivingRouteResult result, int error) {
+				if (error == 0) {
+					if (result != null) {
+						RouteOverlay overlay = new RouteOverlay(MainActivity.this, mapView);
+						setData(overlay, result);
+						mapView.getOverlays().add(overlay);
+						mapView.refresh();
+						Toast.makeText(MainActivity.this, "result not null", Toast.LENGTH_SHORT).show();
+						super.onGetDrivingRouteResult(result, error);
+					}
+				} else {
+					Toast.makeText(MainActivity.this, "没有查询结果", Toast.LENGTH_SHORT).show();
+				}
+			}
+
+			private void setData(RouteOverlay overlay, MKDrivingRouteResult result) {
+				if (result.getNumPlan() > 0) {
+					MKRoutePlan plan = result.getPlan(0);
+					MKRoute route = plan.getRoute(0); // 此处默认参数为0
+					overlay.setData(route);
+				} else {
+					Toast.makeText(MainActivity.this, "XXXX", Toast.LENGTH_SHORT).show();
+				}
+			}
+		};
+
+		search_Drive.init(manager, listener_Drive);
+
+		String start_city = "北京";
+		String end_city = "北京";
+
+		MKPlanNode start_place = new MKPlanNode();
+		start_place.name = "天安门"; // 也可以用地理坐标表示
+		// start_place.pt = ConstantValue.geoUCAS;
+
+		MKPlanNode end_place = new MKPlanNode();
+		end_place.name = "北京大学";// 也可以用地理坐标表示
+
+		// search_Drive.setDrivingPolicy(MKSearch.EBUS_TIME_FIRST); //驾车筛选条件
+
+		search_Drive.drivingSearch(start_city, start_place, end_city, end_place);
+
+		ArrayList<MKWpNode> nodes = new ArrayList<MKWpNode>();
+		MKWpNode node = new MKWpNode();
+		node.city = "北京";
+		node.name = "中国美术学院";
+		nodes.add(node);
+
+		// search_Drive.drivingSearch(start_city, start_place,
+		// end_city,end_place, nodes);
 	}
 
 	/** 场所搜索 **/
-	private void search() {
+	private void search_place() {
 		// Toast.makeText(MainActivity.this, "已进入Search（）方法",
 		// Toast.LENGTH_SHORT).show();
-		search = new MKSearch();
-		listener = new MyMKSearchListener() {
+		search_Place = new MKSearch();
+		listener_Place = new MyMKSearchListener() {
 			@SuppressLint("NewApi")
 			public void onGetPoiResult(MKPoiResult result, int type, int error) {
 				if (error == 0) {
@@ -93,7 +433,6 @@ public class MainActivity extends Activity {
 					}
 				} else {
 					Toast.makeText(MainActivity.this, "没有查询到相关信息", Toast.LENGTH_SHORT).show();
-					;
 				}
 			}
 
@@ -106,34 +445,35 @@ public class MainActivity extends Activity {
 				Toast.makeText(MainActivity.this, string, Toast.LENGTH_SHORT).show();
 			};
 		};
-		search.init(manager, listener);
+		search_Place.init(manager, listener_Place);
 		// search.poiSearchNearBy("医院", ConstantValue.geoUCAS, 10000);
-		search.poiSearchInCity("北京", "加油站");
+		search_Place.poiSearchInCity("北京", "加油站");
 	}
 
-	/** 跳转到搜索页面的下一页  **/
+	/** 跳转到搜索页面的下一页 **/
 	private int currentPage = 0;
+
 	private void nextPageForSearch() {
-		currentPage++; 
-		search.goToPoiPage(currentPage); //跳转到指定页面
+		currentPage++;
+		search_Place.goToPoiPage(currentPage); // 跳转到指定页面
 	}
 
 	private void initView() {
 		mapView = (MapView) findViewById(R.id.mapView);
+
 		mapView.setBuiltInZoomControls(true); // 启用百度地图的缩放功能
 		// mapView.displ
 		mapController = mapView.getController();
+		// mapController.setZoom(15); // 设置地图初始显示为缩放15倍
 
-		mapController.setZoom(15); // 设置地图初始显示为缩放15倍
+		// mapController.setCompassMargin(100, 100);
 
-		mapController.setCompassMargin(100, 100);
-
-		mapController.setCenter(ConstantValue.geoUCAS); // 初始显示地图时设置中心点为国科大
+		// mapController.setCenter(ConstantValue.geoUCAS); // 初始显示地图时设置中心点为国科大
 		// search();
 
 		// drawUCAS_with_Text(); // 在地图上用文字标记国科大
 		// drawUCAS_with_Circle(); // 在地图上用圆形字标记国科大
-		drawUCAS_with_Image(); // 在地图上用圆形字标记国科大
+		// drawUCAS_with_Image(); // 在地图上用圆形字标记国科大
 		// mapView.setTraffic(true); //显示交通图
 		// mapView.setSatellite(true); //显示卫星图
 
@@ -211,9 +551,8 @@ public class MainActivity extends Activity {
 		img_Flag.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) { // 显示平面图
-//				mapView.setSatellite(false);
-//				mapView.setTraffic(false);
-				nextPageForSearch();
+				mapView.setSatellite(false);
+				mapView.setTraffic(false);
 			}
 		});
 
@@ -290,26 +629,29 @@ public class MainActivity extends Activity {
 		ItemizedOverlay<OverlayItem> overlay = new ItemizedOverlay<OverlayItem>(
 				this.getResources().getDrawable(R.drawable.location), mapView) {
 
-			@Override
-			/** 地图上的点击事件 **/
-			public boolean onTap(GeoPoint p, MapView m) {
-				// TODO Auto-generated method stub
-				for (int i = 0; i < this.size(); i++) {
-					OverlayItem item = this.getItem(i);
-					if (Math.abs(p.getLatitudeE6() - item.getPoint().getLatitudeE6()) < 4000
-							&& Math.abs(p.getLongitudeE6() - item.getPoint().getLongitudeE6()) < 4000) {
-						Toast.makeText(MainActivity.this, item.getTitle(), Toast.LENGTH_SHORT).show();
-					}
-				}
-
-				// Toast.makeText(MainActivity.this, "经度：" + p.getLongitudeE6()
-				// + "，维度：" + p.getLatitudeE6(),
-				// Toast.LENGTH_SHORT).show();
-				// OverlayItem item = this.getItem(1);
-				// Toast.makeText(MainActivity.this,
-				// item.getTitle(),Toast.LENGTH_SHORT).show();
-				return super.onTap(p, m);
-			}
+			// @Override
+			// /** 地图上的点击事件 **/
+			// public boolean onTap(GeoPoint p, MapView m) {
+			// // TODO Auto-generated method stub
+			// for (int i = 0; i < this.size(); i++) {
+			// OverlayItem item = this.getItem(i);
+			// if (Math.abs(p.getLatitudeE6() - item.getPoint().getLatitudeE6())
+			// < 4000
+			// && Math.abs(p.getLongitudeE6() -
+			// item.getPoint().getLongitudeE6()) < 4000) {
+			// Toast.makeText(MainActivity.this, item.getTitle(),
+			// Toast.LENGTH_SHORT).show();
+			// }
+			// }
+			//
+			// // Toast.makeText(MainActivity.this, "经度：" + p.getLongitudeE6()
+			// // + "，维度：" + p.getLatitudeE6(),
+			// // Toast.LENGTH_SHORT).show();
+			// // OverlayItem item = this.getItem(1);
+			// // Toast.makeText(MainActivity.this,
+			// // item.getTitle(),Toast.LENGTH_SHORT).show();
+			// return super.onTap(p, m);
+			// }
 
 			// @Override
 			// public boolean onTap(int index) {
@@ -343,6 +685,9 @@ public class MainActivity extends Activity {
 	protected void onResume() {
 		mapView.onResume(); // 防止再次进入MainActivity地图显示出现问题
 		// search();
+		// search_Drive_Route();
+		location();
+		// mLocationClient.start();
 		super.onResume();
 	}
 
@@ -350,6 +695,9 @@ public class MainActivity extends Activity {
 	protected void onPause() {
 		mapView.onPause(); // 防止再次进入MainActivity地图显示出现问题
 		// search();
+		// search_Drive_Route();
+		// location();
+		mLocationClient.stop();// 及时关闭，为省电
 		super.onPause();
 	}
 
@@ -368,7 +716,6 @@ public class MainActivity extends Activity {
 
 		if (lastClickTime <= 0) {
 			Toast.makeText(this, "再按一次后退键退出地图！", Toast.LENGTH_SHORT).show();
-			;
 			lastClickTime = System.currentTimeMillis();
 		} else {
 			long currentTime = System.currentTimeMillis();
