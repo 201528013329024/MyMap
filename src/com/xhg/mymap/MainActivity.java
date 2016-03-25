@@ -26,7 +26,6 @@ import com.baidu.mapapi.map.LocationData;
 import com.baidu.mapapi.map.MKEvent;
 import com.baidu.mapapi.map.MapController;
 import com.baidu.mapapi.map.MapView;
-import com.baidu.mapapi.map.MapView.LayoutParams;
 import com.baidu.mapapi.map.MyLocationOverlay;
 import com.baidu.mapapi.map.OverlayItem;
 import com.baidu.mapapi.map.PoiOverlay;
@@ -51,21 +50,26 @@ import com.baidu.mapapi.search.MKTransitRouteResult;
 import com.baidu.mapapi.search.MKWalkingRouteResult;
 import com.baidu.mapapi.search.MKWpNode;
 import com.baidu.platform.comapi.basestruct.GeoPoint;
+import com.xhg.search_result.MyAdapter;
+import com.xhg.search_result.Search_Place_Result_ListCell;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.Context;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.support.v4.view.ViewPager.LayoutParams;
 import android.util.DisplayMetrics;
-import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
+import android.widget.ListView;
 import android.widget.Toast;
 
 public class MainActivity extends Activity {
@@ -97,62 +101,61 @@ public class MainActivity extends Activity {
 
 		initView();
 
-		addFlagTrafficSatellite(); // 加载可显示平面图、路况图和卫星图按钮
+		 addFlagTrafficSatellite(); // 加载可显示平面图、路况图和卫星图按钮
 
-		// location();
+		 location();
 		addLocation();
-
-		// search_place(); //搜索指定场所
+		addSearchIcon();
 
 		// search_Drive_Route();// 搜索驾车路线
 
 		// search_Walk_Route();// 搜索步行路线
 		// search_Transit_Route();// 搜索公交路线
 
-		addSearchIcon();
-
 	}
 
 	private void addSearchIcon() {
-//		RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(LayoutParams.WRAP_CONTENT,
-//				LayoutParams.WRAP_CONTENT);
-//		lp.addRule(RelativeLayout.CENTER_HORIZONTAL,RelativeLayout.TRUE);
-//		lp.leftMargin = 100;
-//		LayoutInflater inflater = LayoutInflater.from(this);
-//		search_icon = inflater.inflate(R.layout.search, null);
-//		search_icon.setLayoutParams(lp);
+		// RelativeLayout.LayoutParams lp = new
+		// RelativeLayout.LayoutParams(LayoutParams.WRAP_CONTENT,
+		// LayoutParams.WRAP_CONTENT);
+		// lp.addRule(RelativeLayout.CENTER_HORIZONTAL,RelativeLayout.TRUE);
+		// lp.leftMargin = 100;
+		// LayoutInflater inflater = LayoutInflater.from(this);
+		// search_icon = inflater.inflate(R.layout.search, null);
+		// search_icon.setLayoutParams(lp);
 
-		 search_icon = View.inflate(this, R.layout.search, null);
+		search_icon = View.inflate(this, R.layout.search_icon, null);
 
-		// 实例化img_Flag
-		// img_Loc = (ImageView) location_icon.findViewById(R.id.img_Loc);
-		// img_Loc.setImageResource(R.drawable.img_loc);
+		LinearLayout layout = (LinearLayout) search_icon.findViewById(R.id.search_icon);
 
-		 search_icon.setVisibility(View.VISIBLE);
-		
-		 DisplayMetrics dm = new DisplayMetrics();
+		DisplayMetrics metric = new DisplayMetrics();
+		getWindowManager().getDefaultDisplay().getMetrics(metric);
+		int width = metric.widthPixels; // 屏幕宽度（像素）
 
-		 getWindowManager().getDefaultDisplay().getMetrics(dm);
+		search_icon.setVisibility(View.VISIBLE);
 
-		float  width =dm.widthPixels;
-
-		 search_icon.setX((width-search_icon.getWidth())/10);
-		 search_icon.setY(0);
+		Toast.makeText(MainActivity.this, layout.getMeasuredWidth() + "", Toast.LENGTH_SHORT).show();
+		search_icon.setX((width - dip2px(MainActivity.this, 300)) / 2);
+		// search_icon.setX((width - 300/ 2));
+		// search_icon.setY(0);
 
 		mapView.addView(search_icon);
-		
-		
+
 		editText = (EditText) search_icon.findViewById(R.id.editText1);
 		editText.setOnClickListener(new View.OnClickListener() {
-			
+
 			@Override
 			public void onClick(View v) {
 				// TODO Auto-generated method stub
-				Toast.makeText(MainActivity.this, "你点击了我", Toast.LENGTH_SHORT).show();
+				search_place();
 			}
 		});
-		
 
+	}
+
+	public int dip2px(Context context, float dipValue) {
+		float m = context.getResources().getDisplayMetrics().density;
+		return (int) (dipValue * m + 0.5f);
 	}
 
 	private void addLocation() {
@@ -163,16 +166,16 @@ public class MainActivity extends Activity {
 		img_Loc.setImageResource(R.drawable.img_loc);
 
 		location_icon.setVisibility(View.VISIBLE);
+ 
+		// 获取手机屏幕的宽度 
 
-		// 获取手机屏幕的宽度
-
-		WindowManager wm = this.getWindowManager();
-		int height = wm.getDefaultDisplay().getHeight();
-
+		DisplayMetrics metric = new DisplayMetrics();
+		getWindowManager().getDefaultDisplay().getMetrics(metric);
+		int height = metric.heightPixels; // 屏幕宽度（像素）
 		// 设置satellite_traffic_map的显示位置
 
 		location_icon.setX(0);
-		location_icon.setY(height - 230);
+		location_icon.setY(height - dip2px(MainActivity.this, 70));
 
 		// 将satellite_traffic_map显示在mapView上
 		mapView.addView(location_icon);
@@ -417,7 +420,7 @@ public class MainActivity extends Activity {
 
 	/** 场所搜索 **/
 	private void search_place() {
-		// Toast.makeText(MainActivity.this, "已进入Search（）方法",
+		// Toast.makeText(MainActivity.this, "进入search_place",
 		// Toast.LENGTH_SHORT).show();
 		search_Place = new MKSearch();
 		listener_Place = new MyMKSearchListener() {
@@ -430,24 +433,71 @@ public class MainActivity extends Activity {
 						mapView.getOverlays().clear();
 						mapView.getOverlays().add(overlay);
 						mapView.refresh();
+					} else {
+						Toast.makeText(MainActivity.this, "result == null", Toast.LENGTH_SHORT).show();
 					}
 				} else {
 					Toast.makeText(MainActivity.this, "没有查询到相关信息", Toast.LENGTH_SHORT).show();
 				}
 			}
 
+			@SuppressLint("NewApi")
 			private void setData(PoiOverlay overlay, MKPoiResult result) {
 				ArrayList<MKPoiInfo> mkPoiInfos = result.getAllPoi();
+
+				String s = "";
+				MyAdapter adapter = new MyAdapter(MainActivity.this);
+
+				for (int i = 0; i < 10; i++) {
+					MKPoiInfo info = result.getPoi(i);
+					s += info.name + "," + info.city + "," + info.phoneNum + "\n";
+					adapter.data[i] = new Search_Place_Result_ListCell(info.name, info.address, info.phoneNum, 0);
+				}
+
+				DisplayMetrics metric = new DisplayMetrics();
+				getWindowManager().getDefaultDisplay().getMetrics(metric);
+				int width = metric.widthPixels; // 屏幕宽度（像素）
+				int height = metric.heightPixels; // 屏幕高度（像素）
+				// RelativeLayout.LayoutParams lParams = new
+				// RelativeLayout.LayoutParams(width, height / 2);
+				// lParams.alignWithParent = true;
+				// // lParams.setLayoutDirection(LayoutParams.FILL_PARENT);
+				// lParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
+
+				View view = View.inflate(MainActivity.this, R.layout.serch_result, null);
+
+				// view.setLayoutParams(lParams);
+				ListView lv = (ListView) view.findViewById(R.id.tv_search_result);
+
+				ViewGroup.LayoutParams params = lv.getLayoutParams();
+				params.height = height / 2;
+				params.width = width;
+				// listView.getDividerHeight()获取子项间分隔符占用的高度
+				// params.height最后得到整个ListView完整显示需要的高度
+				lv.setLayoutParams(params);
+
+				lv.setAdapter(adapter);
+
+				view.setVisibility(View.VISIBLE);
+				view.setX(0);
+				view.setY(height / 2);
+				mapView.addView(view);
+
 				overlay.setData(mkPoiInfos);
 
+				mapController.setCenter(result.getPoi(0).pt);
+				mapController.setZoom(13);
 				String string = "当前页" + result.getPageIndex() + "/总页数" + result.getNumPages() + "，   当前条目"
 						+ result.getCurrentNumPois() + "/总条目" + result.getNumPois();
-				Toast.makeText(MainActivity.this, string, Toast.LENGTH_SHORT).show();
+
+				// Toast.makeText(MainActivity.this, string,
+				// Toast.LENGTH_SHORT).show();
 			};
 		};
+
 		search_Place.init(manager, listener_Place);
 		// search.poiSearchNearBy("医院", ConstantValue.geoUCAS, 10000);
-		search_Place.poiSearchInCity("北京", "加油站");
+		search_Place.poiSearchInCity("北京", "大学");
 	}
 
 	/** 跳转到搜索页面的下一页 **/
@@ -464,6 +514,19 @@ public class MainActivity extends Activity {
 		mapView.setBuiltInZoomControls(true); // 启用百度地图的缩放功能
 		// mapView.displ
 		mapController = mapView.getController();
+
+		// View view = View.inflate(MainActivity.this, R.layout.serch_result,
+		// null);
+		// ListView lv = (ListView) view.findViewById(R.id.tv_search_result);
+		// MyAdapter adapter = new MyAdapter(MainActivity.this);
+		//
+		// lv.setAdapter(adapter);
+		//
+		// view.setVisibility(View.VISIBLE);
+		// view.setX(0);
+		// view.setY(0);
+		// mapView.addView(view);
+
 		// mapController.setZoom(15); // 设置地图初始显示为缩放15倍
 
 		// mapController.setCompassMargin(100, 100);
@@ -686,8 +749,9 @@ public class MainActivity extends Activity {
 		mapView.onResume(); // 防止再次进入MainActivity地图显示出现问题
 		// search();
 		// search_Drive_Route();
-		location();
+		// location();
 		// mLocationClient.start();
+		// search_place();
 		super.onResume();
 	}
 
@@ -715,7 +779,7 @@ public class MainActivity extends Activity {
 	public void onBackPressed() {
 
 		if (lastClickTime <= 0) {
-			Toast.makeText(this, "再按一次后退键退出地图！", Toast.LENGTH_SHORT).show();
+			Toast.makeText(this, "Press again to exit!", Toast.LENGTH_SHORT).show();
 			lastClickTime = System.currentTimeMillis();
 		} else {
 			long currentTime = System.currentTimeMillis();
