@@ -40,6 +40,7 @@
             android:enabled="true"
             android:process=":remote" >
         </service>
+        <activity android:name="com.xhg.search_result.SearchLableActivity"></activity>
     </application>
 
 </manifest>

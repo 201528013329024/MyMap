@@ -49,26 +49,30 @@ import com.baidu.mapapi.search.MKTransitRoutePlan;
 import com.baidu.mapapi.search.MKTransitRouteResult;
 import com.baidu.mapapi.search.MKWalkingRouteResult;
 import com.baidu.mapapi.search.MKWpNode;
+import com.baidu.mapapi.utils.DistanceUtil;
 import com.baidu.platform.comapi.basestruct.GeoPoint;
 import com.xhg.search_result.MyAdapter;
+import com.xhg.search_result.SearchLableActivity;
 import com.xhg.search_result.Search_Place_Result_ListCell;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.support.v4.view.ViewPager.LayoutParams;
 import android.util.DisplayMetrics;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -101,9 +105,9 @@ public class MainActivity extends Activity {
 
 		initView();
 
-		 addFlagTrafficSatellite(); // 加载可显示平面图、路况图和卫星图按钮
+		addFlagTrafficSatellite(); // 加载可显示平面图、路况图和卫星图按钮
 
-		 location();
+		location();
 		addLocation();
 		addSearchIcon();
 
@@ -135,9 +139,8 @@ public class MainActivity extends Activity {
 		search_icon.setVisibility(View.VISIBLE);
 
 		Toast.makeText(MainActivity.this, layout.getMeasuredWidth() + "", Toast.LENGTH_SHORT).show();
-		search_icon.setX((width - dip2px(MainActivity.this, 300)) / 2);
-		// search_icon.setX((width - 300/ 2));
-		// search_icon.setY(0);
+		search_icon.setX((width - dip2px(MainActivity.this, 320)) / 2);
+		search_icon.setY(15);
 
 		mapView.addView(search_icon);
 
@@ -147,10 +150,30 @@ public class MainActivity extends Activity {
 			@Override
 			public void onClick(View v) {
 				// TODO Auto-generated method stub
-				search_place();
+				// search_place();
+				Intent intent = new Intent();
+				intent.setClass(MainActivity.this, SearchLableActivity.class);
+				MainActivity.this.startActivityForResult(intent, 0);
+
 			}
 		});
 
+	}
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		// TODO Auto-generated method stub
+		switch (resultCode) {
+		case RESULT_OK:
+			// System.out.println(data.getExtras().getString( "result" ));
+			String searchContent = data.getExtras().getString("result");
+			// Toast.makeText(MainActivity.this, searchContent,
+			// Toast.LENGTH_SHORT).show();
+			search_place(searchContent);
+			break;
+		default:
+			break;
+		}
 	}
 
 	public int dip2px(Context context, float dipValue) {
@@ -166,16 +189,12 @@ public class MainActivity extends Activity {
 		img_Loc.setImageResource(R.drawable.img_loc);
 
 		location_icon.setVisibility(View.VISIBLE);
- 
-		// 获取手机屏幕的宽度 
 
-		DisplayMetrics metric = new DisplayMetrics();
-		getWindowManager().getDefaultDisplay().getMetrics(metric);
-		int height = metric.heightPixels; // 屏幕宽度（像素）
-		// 设置satellite_traffic_map的显示位置
+		// 获取手机屏幕的宽度
 
-		location_icon.setX(0);
-		location_icon.setY(height - dip2px(MainActivity.this, 70));
+		location_icon.setX(screenWidth - 160);
+//		location_icon.setY(height - dip2px(MainActivity.this, 70));
+		location_icon.setY(800);
 
 		// 将satellite_traffic_map显示在mapView上
 		mapView.addView(location_icon);
@@ -191,6 +210,8 @@ public class MainActivity extends Activity {
 		});
 
 	}
+
+	public GeoPoint MyPoint = null;
 
 	private void location() {
 		// mapView.setTraffic(false);
@@ -248,10 +269,10 @@ public class MainActivity extends Activity {
 			mapView.getOverlays().add(overlay);
 
 			// mapView.refresh();
-			GeoPoint point = new GeoPoint((int) (data.latitude * 1E6), (int) (data.longitude * 1E6));
+			MyPoint = new GeoPoint((int) (data.latitude * 1E6), (int) (data.longitude * 1E6));
 			mapController.setZoom(15);
 			// mapController.setCenter(point);
-			mapController.animateTo(point);
+			mapController.animateTo(MyPoint);
 			mapView.refresh();
 			// mapView.invalidate();
 
@@ -418,8 +439,20 @@ public class MainActivity extends Activity {
 		// end_city,end_place, nodes);
 	}
 
+	public View view = null;
+	public ListView lv = null;
+	public Button btn_UpPage = null;
+	public Button btn_NextPage = null;
+	public Button  btn_PageInfo = null;
+
+	public int currentPage = 0;
+	public int numPage = 0;
+	public ViewGroup.LayoutParams params = null;
+	public int screenWidth = 0;;
+	public int screenHeight = 0;
+
 	/** 场所搜索 **/
-	private void search_place() {
+	private void search_place(String serchContent) {
 		// Toast.makeText(MainActivity.this, "进入search_place",
 		// Toast.LENGTH_SHORT).show();
 		search_Place = new MKSearch();
@@ -445,63 +478,142 @@ public class MainActivity extends Activity {
 			private void setData(PoiOverlay overlay, MKPoiResult result) {
 				ArrayList<MKPoiInfo> mkPoiInfos = result.getAllPoi();
 
-				String s = "";
 				MyAdapter adapter = new MyAdapter(MainActivity.this);
 
 				for (int i = 0; i < 10; i++) {
 					MKPoiInfo info = result.getPoi(i);
-					s += info.name + "," + info.city + "," + info.phoneNum + "\n";
-					adapter.data[i] = new Search_Place_Result_ListCell(info.name, info.address, info.phoneNum, 0);
+					String placeName = info.name;
+					String placeAdress = info.address;
+					String placePhone = info.phoneNum != "" ? info.phoneNum : "暂无电话信息";
+					int placeDistance = (int) DistanceUtil.getDistance(MyPoint, info.pt);
+					adapter.data[i] = new Search_Place_Result_ListCell(placeName, placeAdress, placePhone,
+							placeDistance);
 				}
 
-				DisplayMetrics metric = new DisplayMetrics();
-				getWindowManager().getDefaultDisplay().getMetrics(metric);
-				int width = metric.widthPixels; // 屏幕宽度（像素）
-				int height = metric.heightPixels; // 屏幕高度（像素）
-				// RelativeLayout.LayoutParams lParams = new
-				// RelativeLayout.LayoutParams(width, height / 2);
-				// lParams.alignWithParent = true;
-				// // lParams.setLayoutDirection(LayoutParams.FILL_PARENT);
-				// lParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
+				if(view != null) mapView.removeViewInLayout(view);
+				view = View.inflate(MainActivity.this, R.layout.serch_result, null);
+				lv = (ListView) view.findViewById(R.id.tv_search_result);
+				btn_UpPage = (Button) view.findViewById(R.id.btn_UpPage);
+				btn_NextPage = (Button) view.findViewById(R.id.btn_NextPage);
+			    btn_PageInfo = (Button) view.findViewById(R.id.btn_PageInfo);
 
-				View view = View.inflate(MainActivity.this, R.layout.serch_result, null);
+				currentPage = result.getPageIndex();
+				numPage = result.getNumPages();
 
-				// view.setLayoutParams(lParams);
-				ListView lv = (ListView) view.findViewById(R.id.tv_search_result);
+				btn_UpPage.setOnClickListener(new View.OnClickListener() {
+					@Override
+					public void onClick(View v) {
+						if (currentPage == 0) {
+							Toast.makeText(MainActivity.this, "当前已经是第一页", Toast.LENGTH_SHORT).show();
+						} else {
+							UpPageForSearch();
+						}
+					}
+				});
 
-				ViewGroup.LayoutParams params = lv.getLayoutParams();
-				params.height = height / 2;
-				params.width = width;
-				// listView.getDividerHeight()获取子项间分隔符占用的高度
-				// params.height最后得到整个ListView完整显示需要的高度
-				lv.setLayoutParams(params);
+				btn_NextPage.setOnClickListener(new View.OnClickListener() {
+					@Override
+					public void onClick(View v) {
+						if (currentPage == numPage) {
+							Toast.makeText(MainActivity.this, "当前已经是最后一页", Toast.LENGTH_SHORT).show();
+						} else {
+							nextPageForSearch();
+						}
+					}
+				});
+
+				btn_PageInfo.setText("共找到" + result.getNumPois() + "搜索结果");
+
+				params = lv.getLayoutParams();
+
+				btn_PageInfo.setOnClickListener(new View.OnClickListener() {
+					@Override
+					public void onClick(View v) {
+						view.setVisibility(View.INVISIBLE);
+						show_Close_Search_Result();
+					}
+				});
 
 				lv.setAdapter(adapter);
 
+				params.width = screenWidth;
+				params.height = screenHeight / 2;
+
+				// params.height=setListViewHeightBasedOnChild(lv);
+
+				lv.setLayoutParams(params);
+
 				view.setVisibility(View.VISIBLE);
-				view.setX(0);
-				view.setY(height / 2);
+
+				view.setY(params.height - dip2px(MainActivity.this, 65));
+
+				view.invalidate();
+
 				mapView.addView(view);
 
 				overlay.setData(mkPoiInfos);
 
-				mapController.setCenter(result.getPoi(0).pt);
+				mapController.animateTo(result.getPoi(0).pt);
 				mapController.setZoom(13);
 				String string = "当前页" + result.getPageIndex() + "/总页数" + result.getNumPages() + "，   当前条目"
 						+ result.getCurrentNumPois() + "/总条目" + result.getNumPois();
 
-				// Toast.makeText(MainActivity.this, string,
-				// Toast.LENGTH_SHORT).show();
 			};
 		};
 
 		search_Place.init(manager, listener_Place);
 		// search.poiSearchNearBy("医院", ConstantValue.geoUCAS, 10000);
-		search_Place.poiSearchInCity("北京", "大学");
+		search_Place.poiSearchInCity("北京", serchContent);
+	}
+
+	public View view_close_search_result = null;
+
+	private void show_Close_Search_Result() {
+		view_close_search_result = View.inflate(MainActivity.this, R.layout.close_search_result, null);
+		ListView lv = (ListView) view_close_search_result.findViewById(R.id.lv);
+		ViewGroup.LayoutParams params = lv.getLayoutParams();
+		params.width = screenWidth;
+		lv.setLayoutParams(params);
+		view_close_search_result.setY(screenHeight - dip2px(MainActivity.this, 65));
+
+		Button btn_Show = (Button) view_close_search_result.findViewById(R.id.btn_Show);
+		Button btn_Close = (Button) view_close_search_result.findViewById(R.id.btn_Close);
+		Button btn_Info = (Button) view_close_search_result.findViewById(R.id.btn);
+		btn_Info.setText(btn_PageInfo.getText());
+		btn_Show.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				view.setVisibility(View.VISIBLE);
+				view_close_search_result.setVisibility(View.INVISIBLE);
+			}
+		});
+		
+		btn_Info.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				view.setVisibility(View.VISIBLE);
+				view_close_search_result.setVisibility(View.INVISIBLE);
+			}
+		});
+
+		btn_Close.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				view_close_search_result.setVisibility(View.INVISIBLE);
+				mapView.removeViewInLayout(view_close_search_result);
+				mapView.removeViewInLayout(view);
+			}
+		});
+		
+		mapView.addView(view_close_search_result);
 	}
 
 	/** 跳转到搜索页面的下一页 **/
-	private int currentPage = 0;
+
+	private void UpPageForSearch() {
+		currentPage--;
+		search_Place.goToPoiPage(currentPage); // 跳转到指定页面
+	}
 
 	private void nextPageForSearch() {
 		currentPage++;
@@ -514,6 +626,11 @@ public class MainActivity extends Activity {
 		mapView.setBuiltInZoomControls(true); // 启用百度地图的缩放功能
 		// mapView.displ
 		mapController = mapView.getController();
+
+		DisplayMetrics metric = new DisplayMetrics();
+		getWindowManager().getDefaultDisplay().getMetrics(metric);
+		screenWidth = metric.widthPixels; // 屏幕宽度（像素）
+		screenHeight = metric.heightPixels; // 屏幕高度（像素）
 
 		// View view = View.inflate(MainActivity.this, R.layout.serch_result,
 		// null);
@@ -601,12 +718,8 @@ public class MainActivity extends Activity {
 
 		// 获取手机屏幕的宽度
 		satellite_traffic_map.setVisibility(View.VISIBLE);
-		WindowManager wm = this.getWindowManager();
-		int width = wm.getDefaultDisplay().getWidth();
-
-		// 设置satellite_traffic_map的显示位置
-		satellite_traffic_map.setX(width - 130);
-		satellite_traffic_map.setY(0);
+		satellite_traffic_map.setX(screenWidth - 130);
+		satellite_traffic_map.setY(35);
 
 		// 将satellite_traffic_map显示在mapView上
 		mapView.addView(satellite_traffic_map);

@@ -65,11 +65,13 @@ public class MyAdapter extends BaseAdapter {
 		TextView tv_palceName = (TextView) l1.findViewById(com.xhg.mymap.R.id.tv_place_name);
 		TextView tv_palceAdress = (TextView) l1.findViewById(com.xhg.mymap.R.id.tv_place_address);
 		TextView tv_palcePhone = (TextView) l1.findViewById(com.xhg.mymap.R.id.tv_place_phone);
+		TextView tv_distance = (TextView) l1.findViewById(com.xhg.mymap.R.id.tv_place_distance);
 		//
 		Search_Place_Result_ListCell data = getItem(position);
 		tv_palceName.setText(data.getPlace_name());
 		tv_palceAdress.setText(data.getPlace_address());
 		tv_palcePhone.setText(data.getPlace_phone());
+		tv_distance.setText(data.getDistance()+"m");
 
 		return l1;
 	}

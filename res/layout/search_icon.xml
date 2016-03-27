@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="300dp"
+    android:layout_width="320dp"
     android:layout_height="wrap_content"
     android:background="@drawable/border"
     android:orientation="vertical" 
@@ -17,13 +17,14 @@
             android:id="@+id/imageView1"
             android:layout_width="28dp"
             android:layout_height="28dp"
+            android:layout_marginLeft="7dp"
             android:src="@drawable/user_img" />
 
         <EditText
             android:id="@+id/editText1"
             android:layout_width="wrap_content"
             android:layout_height="35dp"
-            android:hint="搜美食、电影院、加油站..."
+            android:hint="搜美食、酒店、景点、医院..."
             android:editable="false"/>
 
         <ImageView
