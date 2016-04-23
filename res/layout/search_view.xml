@@ -7,10 +7,10 @@
     <LinearLayout
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal" 
+        android:layout_marginBottom="5dp"
         android:layout_marginTop="10dp"
-        android:layout_marginBottom="10dp"
-        android:background="@drawable/border">
+        android:background="@drawable/border"
+        android:orientation="horizontal" >
 
         <EditText
             android:id="@+id/search_bar"
@@ -25,6 +25,48 @@
             android:layout_height="37dp"
             android:background="#E0E0E0"
             android:src="@android:drawable/ic_search_category_default" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="5dp"
+        android:background="@drawable/border"
+        android:orientation="horizontal" >
+
+        <RadioGroup
+            android:id="@+id/radio_group"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" >
+
+            <RadioButton
+                android:id="@+id/radioButton1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="按地区" />
+
+            <EditText
+                android:id="@+id/search_area"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textSize="16sp" />
+
+            <RadioButton
+                android:id="@+id/radioButton2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="按距离" />
+
+            <EditText
+                android:id="@+id/search_boundary"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:inputType="number"
+                android:textSize="16sp" />
+        </RadioGroup>
     </LinearLayout>
 
     <ScrollView
@@ -227,7 +269,8 @@
                     android:background="#E0E0E0"
                     android:text="川菜" />
             </LinearLayout>
-  <LinearLayout
+
+            <LinearLayout
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal" >
@@ -240,7 +283,7 @@
                     android:layout_margin="1dp"
                     android:layout_weight="1"
                     android:background="#E0E0E0"
-                    android:text="西餐"/>
+                    android:text="西餐" />
 
                 <Button
                     android:id="@+id/btn17"

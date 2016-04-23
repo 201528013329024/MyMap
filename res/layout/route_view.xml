@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+    <TextView
+        android:id="@+id/textView1"
+        android:layout_width="fill_parent"
+        android:layout_height="35sp"
+        android:background="#80a2be"
+        android:gravity="center"
+        android:text="路  线"
+        android:textColor="#FFFFFF"
+        android:textSize="20sp" />
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:background="#80a0be"
+        android:orientation="horizontal" >
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal" >
+
+            <ImageView
+                android:layout_width="35sp"
+                android:layout_height="35sp"
+                android:src="@drawable/gongjiao" />
+
+            <Button
+                android:id="@+id/btn_GongJiao"
+                android:layout_width="wrap_content"
+                android:layout_height="35sp"
+                android:background="@android:color/transparent"
+                android:text="公交"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal" >
+
+            <ImageView
+                android:layout_width="35sp"
+                android:layout_height="35sp"
+                android:src="@drawable/jiache" />
+
+            <Button
+                android:id="@+id/btn_JiaChe"
+                android:layout_width="wrap_content"
+                android:layout_height="35sp"
+                android:background="@android:color/transparent"
+                android:text="驾车"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal" >
+
+            <ImageView
+                android:layout_width="35sp"
+                android:layout_height="35sp"
+                android:src="@drawable/buxing" />
+
+            <Button
+                android:id="@+id/btn_Walking"
+                android:layout_width="wrap_content"
+                android:layout_height="35sp"
+                android:background="@android:color/transparent"
+                android:text="步行"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:background="#FFFFFF"
+        android:orientation="horizontal" >
+
+        <ListView
+            android:id="@+id/tv_routes_list"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
+        </ListView>
+    </LinearLayout>
+
+</LinearLayout>

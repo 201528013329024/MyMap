@@ -8,7 +8,7 @@
         android:id="@+id/img_place"
         android:layout_width="80sp"
         android:layout_height="80sp"
-        android:src="@drawable/img_place"
+      android:src="@drawable/search_lbel_default"
         android:layout_marginLeft="3dp" />
 
     <LinearLayout
@@ -60,8 +60,8 @@
 
         <ImageView
             android:id="@+id/img_go_to_place"
-            android:layout_width="55dp"
-            android:layout_height="55dp"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
             android:src="@drawable/daohang" />
     </LinearLayout>
 

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:background="#40a0be"
+    android:orientation="horizontal" >
+
+    <ImageView
+        android:id="@+id/imageView1"
+        android:layout_width="24sp"
+        android:layout_height="24sp"
+        android:src="@drawable/dialog_title" 
+        android:layout_marginLeft="5sp"
+        android:layout_marginRight="3sp"
+        android:background="#40a0be"/>
+
+    <TextView
+        android:id="@+id/tvDialogTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="#FFFFFF"
+        android:textSize="21sp"
+        android:text="路线查询" />
+
+</LinearLayout>

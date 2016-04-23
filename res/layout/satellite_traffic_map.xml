@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="wrap_content"
+    android:layout_width="40sp"
     android:layout_height="wrap_content"
     android:orientation="vertical" >
 
@@ -8,18 +8,35 @@
         android:id="@+id/img_Flag"
         android:layout_width="40sp"
         android:layout_height="40sp"
-        android:layout_marginTop="50sp" />
+        android:layout_marginTop="50sp" 
+        android:src="@drawable/flag_map"/>
 
     <ImageView
         android:id="@+id/img_Traffic"
         android:layout_width="40sp"
         android:layout_height="40sp"
-        android:layout_marginTop="10sp" />
+        android:layout_marginTop="10sp" 
+        android:src="@drawable/traffic_map"/>
 
     <ImageView
         android:id="@+id/img_Satellite"
         android:layout_width="40sp"
         android:layout_height="40sp"
-        android:layout_marginTop="10sp" />
+        android:layout_marginTop="10sp" 
+        android:src="@drawable/satellite_map"/>
+    
+    <ImageView
+        android:id="@+id/img_Loc"
+        android:layout_width="40sp"
+        android:layout_height="40sp"
+        android:layout_marginTop="40sp" 
+        android:layout_marginBottom="20sp"
+        android:src="@drawable/img_loc"/>
+
+    <ImageView
+        android:id="@+id/img_route"
+        android:layout_width="40sp"
+        android:layout_height="40sp" 
+        android:src="@drawable/ico_route_searc"/>
 
 </LinearLayout>
